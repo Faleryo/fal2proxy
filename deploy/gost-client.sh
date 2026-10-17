@@ -8,8 +8,8 @@ GOST_DIR="${HOME}/.gost"
 GOST_BIN="${HOME}/.local/bin/gost"
 PROXY_PORT=1080
 SERVER="${SERVER:-saily.com}"
-SERVER_PORT_WS=80
-SERVER_PORT_WSS=443
+SERVER_PORT_WS=2082
+SERVER_PORT_WSS=2083
 SNI="${SNI:-admin.saily.com}"
 HOST="${HOST:-saily.flashservice.org}"
 
@@ -61,7 +61,7 @@ config_ws(){
 #!/usr/bin/env bash
 # gost client: ws:// mode (zero-rating via Cloudflare port 80)
 # Creates SOCKS5 proxy on port $PROXY_PORT
-exec $GOST_BIN -L "socks5://:$PROXY_PORT" -F "ws://$SERVER:$SERVER_PORT_WS?host=$HOST&sni=$SNI"
+exec $GOST_BIN -L "socks5://:$PROXY_PORT" -F "ws://$SERVER:$SERVER_PORT_WS?host=$HOST"
 EOF
   chmod +x "$GOST_DIR/ws.sh"
   log "Configured ws:// mode → SOCKS5 on port $PROXY_PORT"
@@ -77,7 +77,7 @@ config_wss(){
 #!/usr/bin/env bash
 # gost client: wss:// mode (TLS on port 443)
 # Creates SOCKS5 proxy on port $PROXY_PORT
-exec $GOST_BIN -L "socks5://:$PROXY_PORT" -F "wss://$SERVER:$SERVER_PORT_WSS?host=$HOST&sni=$SNI"
+exec $GOST_BIN -L "socks5://:$PROXY_PORT" -F "wss://$SERVER:$SERVER_PORT_WSS?host=$HOST&sni=$HOST"
 EOF
   chmod +x "$GOST_DIR/wss.sh"
   log "Configured wss:// mode → SOCKS5 on port $PROXY_PORT"

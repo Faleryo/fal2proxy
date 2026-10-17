@@ -8,11 +8,11 @@ GOST_DIR="/opt/gost"
 GOST_BIN="/usr/local/bin/gost"
 GOST_USER="gost"
 GOST_GROUP="gost"
-WS_PORT=8080
-WSS_PORT=8443
+WS_PORT=2082
+WSS_PORT=2083
 SSH_BACKEND=""  # not needed for gost server (proxy mode)
 DOMAIN="${DOMAIN:-saily.flashservice.org}"
-CERT_DIR="/etc/letsencrypt/live/$DOMAIN"
+CERT_DIR="/opt/gost/certs"
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 die(){ echo "[ERROR] $*" >&2; exit 1; }
@@ -118,8 +118,16 @@ EOF
 
 install_cert(){
   need_root
-  if [ -d "$CERT_DIR" ]; then
-    log "TLS cert already exists for $DOMAIN"
+  # Copy certs to gost dir for gost user access
+  if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+    mkdir -p /opt/gost/certs
+    cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem /opt/gost/certs/fullchain.pem
+    cp /etc/letsencrypt/live/$DOMAIN/privkey.pem /opt/gost/certs/privkey.pem
+    chown -R gost:gost /opt/gost/certs
+    chmod 644 /opt/gost/certs/fullchain.pem
+    chmod 600 /opt/gost/certs/privkey.pem
+    chown gost:gost /opt/gost/certs/privkey.pem
+    log "TLS cert copied to /opt/gost/certs/"
     return
   fi
   log "Installing certbot for Let's Encrypt..."
@@ -131,8 +139,22 @@ install_cert(){
   elif command -v yum >/dev/null 2>&1; then
     yum install -y certbot >/dev/null 2>&1
   fi
+  log "Stopping nginx briefly for certbot..."
+  systemctl stop nginx 2>/dev/null || true
+  sleep 1
   log "Obtaining TLS cert for $DOMAIN..."
   certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos --email "admin@$DOMAIN" 2>&1 | tail -5
+  systemctl start nginx 2>/dev/null || true
+  # Copy certs
+  if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+    mkdir -p /opt/gost/certs
+    cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem /opt/gost/certs/fullchain.pem
+    cp /etc/letsencrypt/live/$DOMAIN/privkey.pem /opt/gost/certs/privkey.pem
+    chown -R gost:gost /opt/gost/certs
+    chmod 644 /opt/gost/certs/fullchain.pem
+    chmod 600 /opt/gost/certs/privkey.pem
+    chown gost:gost /opt/gost/certs/privkey.pem
+  fi
   if [ -d "$CERT_DIR" ]; then
     log "TLS cert obtained"
   else

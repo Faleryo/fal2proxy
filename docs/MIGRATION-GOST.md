@@ -63,8 +63,18 @@ Set SOCKS5 proxy to `127.0.0.1:1080` in your browser/apps.
 | Tunnel protocol | Raw TCP via HTTP upgrade | WebSocket (ws:// or wss://) |
 | Encryption | SSH (OpenSSH) | gost (TLS/AES) |
 | Zero-rating | Yes (Cloudflare) | Yes (Cloudflare) |
-| Performance | ~6 Mbps up / ~1.7 Mbps down | TBD (expected better) |
+| Performance | ~6.3 Mbps up / ~1.7 Mbps down | ~6.1 Mbps up / ~3.5 Mbps down |
 | Complexity | 4 layers | 2 layers |
+
+## Throughput results (measured 2026-10-17)
+
+| Mode | Upload | Download |
+|------|--------|----------|
+| v2 (DarkTunnel + rawbridge, via Cloudflare) | ~6.3 Mbps | ~1.7 Mbps |
+| v3 (gost, via Cloudflare) | ~6.1 Mbps | ~3.5 Mbps |
+| v3 (gost, direct, no Cloudflare) | ~4.3 Mbps | ~4.3 Mbps |
+
+**Conclusion** : gost améliore significativement le débit en download (x2) via Cloudflare. Le débit en upload est comparable. Le goulot reste Cloudflare.
 
 ## Rollback
 If v3 doesn't work, v2 is still running. Just stop gost and use DarkTunnel as before:

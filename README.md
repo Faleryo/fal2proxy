@@ -31,7 +31,13 @@ Then use `fal2proxy` menu.
 - v2.0.0: C bridge (epoll + splice + optimized I/O) + DarkTunnel
 - v3.0.0-dev: gost (ws:// + wss://) — replaces DarkTunnel with gost client/server
 
-## v3 (gost) — In Development
+## v3 (gost) — In Development (deployed in parallel on VPS)
+
+### Throughput (via Cloudflare, zero-rating)
+| Mode | Upload | Download |
+|------|--------|----------|
+| v2 (DarkTunnel) | ~6.3 Mbps | ~1.7 Mbps |
+| v3 (gost) | ~6.1 Mbps | ~3.5 Mbps |
 v3 replaces DarkTunnel + rawbridge + OpenSSH with **gost** (Go Simple Tunnel).
 - Server: gost (ws:// port 80 + wss:// port 443 in parallel)
 - Client: gost (Android/PC/Mac/Linux)
