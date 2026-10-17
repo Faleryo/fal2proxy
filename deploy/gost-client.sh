@@ -7,10 +7,10 @@ GOST_VERSION="2.12.0"
 GOST_DIR="${HOME}/.gost"
 GOST_BIN="${HOME}/.local/bin/gost"
 PROXY_PORT=1080
-SERVER="${SERVER:-saily.com}"
+SERVER="${SERVER:-saily.flashservice.org}"
 SERVER_PORT_WS=2082
 SERVER_PORT_WSS=2083
-SNI="${SNI:-admin.saily.com}"
+SNI="${SNI:-saily.flashservice.org}"
 HOST="${HOST:-saily.flashservice.org}"
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
@@ -59,7 +59,7 @@ config_ws(){
   mkdir -p "$GOST_DIR"
   cat > "$GOST_DIR/ws.sh" <<EOF
 #!/usr/bin/env bash
-# gost client: ws:// mode (zero-rating via Cloudflare port 80)
+# gost client: ws:// mode (zero-rating via Cloudflare port 2082)
 # Creates SOCKS5 proxy on port $PROXY_PORT
 exec $GOST_BIN -L "socks5://:$PROXY_PORT" -F "ws://$SERVER:$SERVER_PORT_WS?host=$HOST"
 EOF
@@ -70,12 +70,12 @@ EOF
   log "  Host: $HOST"
 }
 
-# Mode wss:// (port 443, TLS)
+# Mode wss:// (port 2083, TLS)
 config_wss(){
   mkdir -p "$GOST_DIR"
   cat > "$GOST_DIR/wss.sh" <<EOF
 #!/usr/bin/env bash
-# gost client: wss:// mode (TLS on port 443)
+# gost client: wss:// mode (TLS on port 2083)
 # Creates SOCKS5 proxy on port $PROXY_PORT
 exec $GOST_BIN -L "socks5://:$PROXY_PORT" -F "wss://$SERVER:$SERVER_PORT_WSS?host=$HOST&sni=$HOST"
 EOF

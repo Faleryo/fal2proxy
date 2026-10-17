@@ -76,6 +76,16 @@ Set SOCKS5 proxy to `127.0.0.1:1080` in your browser/apps.
 
 **Conclusion** : gost améliore significativement le débit en download (x2) via Cloudflare. Le débit en upload est comparable. Le goulot reste Cloudflare.
 
+## Throughput results (measured 2026-10-17)
+
+| Mode | Upload | Download |
+|------|--------|----------|
+| v2 (DarkTunnel, via Cloudflare) | ~6.3 Mbps | ~1.7 Mbps |
+| v3 gost ws:// (via Cloudflare port 2082) | ~6.1 Mbps | ~3.5 Mbps |
+| v3 gost wss:// (via Cloudflare port 2083) | TBD | TBD |
+
+**Conclusion** : gost améliore significativement le débit en download (x2) via Cloudflare.
+
 ## Rollback
 If v3 doesn't work, v2 is still running. Just stop gost and use DarkTunnel as before:
 ```bash
