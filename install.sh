@@ -175,6 +175,11 @@ EOF
 systemctl daemon-reload
 svc_enable_start fal2proxy-raw
 
+# logrotate
+if [ -f "$SCRIPT_DIR/logrotate-fal2proxy" ]; then
+  cp "$SCRIPT_DIR/logrotate-fal2proxy" /etc/logrotate.d/fal2proxy
+fi
+
 # firewall
 if cmd_exists ufw; then
   ufw allow $SSH_PORT/tcp >/dev/null 2>&1 || true

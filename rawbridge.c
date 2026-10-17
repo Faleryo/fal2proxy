@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
+#include <sys/syscall.h>
 
 #define LISTEN_PORT 8080
 #define BACKEND_PORT 22
@@ -33,6 +34,37 @@ static void set_opts(int fd) {
 }
 
 static void pump_direction(int src, int dst, int *alive) {
+    /* Try zero-copy splice first */
+    int pipefd[2];
+    if (pipe(pipefd) == 0) {
+        int fl = fcntl(pipefd[0], F_GETFL, 0);
+        fcntl(pipefd[0], F_SETFL, fl | O_NONBLOCK);
+        fl = fcntl(pipefd[1], F_GETFL, 0);
+        fcntl(pipefd[1], F_SETFL, fl | O_NONBLOCK);
+        ssize_t n = syscall(SYS_splice, src, NULL, pipefd[1], NULL, BUF_SIZE, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+        if (n > 0) {
+            ssize_t sent = 0;
+            while (sent < n) {
+                ssize_t w = syscall(SYS_splice, pipefd[0], NULL, dst, NULL, n - sent, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+                if (w <= 0) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) { usleep(50); continue; }
+                    n = -1; break;
+                }
+                sent += w;
+            }
+            close(pipefd[0]);
+            close(pipefd[1]);
+            if (n < 0) *alive = 0;
+            return;
+        }
+        close(pipefd[0]);
+        close(pipefd[1]);
+        if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINVAL && errno != ENOSYS) {
+            *alive = 0;
+            return;
+        }
+    }
+    /* Fallback: recv/send */
     char buf[BUF_SIZE];
     ssize_t n = recv(src, buf, BUF_SIZE, MSG_DONTWAIT);
     if (n > 0) {

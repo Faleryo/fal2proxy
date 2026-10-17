@@ -243,6 +243,26 @@ uninstall(){
   pause
 }
 
+# ---------- bandwidth monitor ----------
+bandwidth_monitor(){
+  header
+  echo "Active connections:"
+  ss -tn state established '( dport = :80 or dport = :8443 or dport = :38443 )' 2>/dev/null | tail -n +2 | head -20
+  echo
+  echo "Nginx requests (last 5 min):"
+  awk -v d="$(date -d '5 min ago' '+%d/%b/%Y:%H:%M')" '$4 > "["d {print}' /var/log/nginx/access.log 2>/dev/null | wc -l
+  echo
+  echo "SSH sessions:"
+  who | grep -c pts || echo 0
+  echo
+  echo "Service status:"
+  for svc in nginx fal2proxy-raw ssh fail2ban; do
+    echo "  $svc: $(systemctl is-active $svc 2>/dev/null)"
+  done
+  echo
+  pause
+}
+
 # ---------- main loop ----------
 while true; do
   header
@@ -257,6 +277,7 @@ while true; do
   echo "9) Backup / Restore"
   echo "10) Update components"
   echo "11) Uninstall"
+  echo "12) Bandwidth monitor"
   echo "0) Exit"
   echo
   read -rp "Choice: " ch
@@ -272,6 +293,7 @@ while true; do
     9) backup_restore ;;
     10) update_components ;;
     11) uninstall; break ;;
+    12) bandwidth_monitor ;;
     0) break ;;
     *) ;;
   esac
