@@ -2,6 +2,14 @@
 # fal2proxy installer
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Parse --mode= argument
+MODE="default"
+for arg in "$@"; do
+  case "$arg" in
+    --mode=*) MODE="${arg#--mode=}" ;;
+    --mode) shift; MODE="${1:-default}" ;;
+  esac
+done
 source "$SCRIPT_DIR/lib/common.sh"
 
 need_root
@@ -230,5 +238,17 @@ mkdir -p "$FAL_DIR/data"
 touch "$FAL_DIR/data/users.db"
 chmod 600 "$FAL_DIR/data/users.db"
 
+# gost mode (optional)
+if [ "${MODE:-default}" = "gost" ]; then
+  echo
+  echo "=== Installing gost server ==="
+  if [ -f "$SCRIPT_DIR/deploy/gost-server.sh" ]; then
+    bash "$SCRIPT_DIR/deploy/gost-server.sh" install
+  else
+    echo "gost-server.sh not found. Skipping."
+  fi
+fi
+
 echo "=== Installation complete ==="
 echo "Run: fal2proxy"
+echo "Mode: ${MODE:-default}"

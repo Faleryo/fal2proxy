@@ -1,0 +1,50 @@
+# gost-server.service — systemd unit for gost WebSocket server
+# Place in /etc/systemd/system/ and enable with: systemctl enable --now gost-server
+# This service runs BOTH ws:// (port 8080) and wss:// (port 8443) in parallel.
+
+[Unit]
+Description=gost server (ws:// + wss://)
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/gost-server.pid
+ExecStart=/opt/gost/start-both.sh
+ExecStop=/bin/kill -TERM $MAINPID
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+# Also create the start-both.sh wrapper
+cat > /home/pierre/fal2proxy/deploy/start-both.sh <<'EOF'
+#!/usr/bin/env bash
+# start-both.sh — Start both ws:// and wss:// gost servers in parallel
+GOST_DIR="/opt/gost"
+GOST_BIN="/usr/local/bin/gost"
+SSH_BACKEND="127.0.0.1:22"
+CERT_DIR="/etc/letsencrypt/live/saily.flashservice.org"
+WS_PORT=8080
+WSS_PORT=8443
+
+# Start ws:// server
+nohup "$GOST_BIN" -L "ws://:$WS_PORT" -F "tcp://$SSH_BACKEND" \
+  > "$GOST_DIR/ws.log" 2>&1 &
+echo $! > "$GOST_DIR/ws.pid"
+
+# Start wss:// server (if cert available)
+if [ -d "$CERT_DIR" ]; then
+  nohup "$GOST_BIN" -L "wss://:$WSS_PORT?cert=$CERT_DIR/fullchain.pem&key=$CERT_DIR/privkey.pem" -F "tcp://$SSH_BACKEND" \
+    > "$GOST_DIR/wss.log" 2>&1 &
+  echo $! > "$GOST_DIR/wss.pid"
+fi
+
+# Write main PID
+echo $$ > /run/gost-server.pid
+
+# Keep running
+wait
+EOF
+chmod +x /home/pierre/fal2proxy/deploy/start-both.sh
+echo "created"

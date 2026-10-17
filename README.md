@@ -28,4 +28,17 @@ Then use `fal2proxy` menu.
 
 ## Versions
 - v1.0.0: Python bridge (select)
-- v2.0.0: C bridge (epoll + splice + optimized I/O)
+- v2.0.0: C bridge (epoll + splice + optimized I/O) + DarkTunnel
+- v3.0.0-dev: gost (ws:// + wss://) — replaces DarkTunnel with gost client/server
+
+## v3 (gost) — In Development
+v3 replaces DarkTunnel + rawbridge + OpenSSH with **gost** (Go Simple Tunnel).
+- Server: gost (ws:// port 80 + wss:// port 443 in parallel)
+- Client: gost (Android/PC/Mac/Linux)
+- SOCKS5 proxy on port 1080
+- See `docs/MIGRATION-GOST.md` for details
+
+Install with gost mode:
+```
+bash install.sh --mode=gost
+```
