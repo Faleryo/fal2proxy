@@ -287,6 +287,10 @@ fal2proxy/
 
 ---
 
+## Glossaire
+
+Voir `docs/GLOSSARY.md` pour la définition de tous les termes techniques (zero-rating, Domain Fronting, SNI, DPI, etc.).
+
 ## Améliorations futures possibles
 
 1. **gost v3** — remplacer DarkTunnel par gost client/serveur (plus rapide, moins de couches)
