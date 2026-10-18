@@ -187,5 +187,31 @@ Au lieu de `yas.tg`, testez si l'opérateur zero-rate **tout le trafic Cloudflar
 | **VPS local** | Serveur dans le réseau de l'opérateur | VPS au Togo sur le réseau Moov/Yas |
 | **stunnel** | Outil de tunnel TLS | Encapsule SSH dans du TLS |
 | **obfs4** | Protocole d'obfuscation | Masque le trafic SSH en HTTPS |
-EOF
-echo "created"
+
+---
+
+## 7. Mesures réelles de zero-rating (18/10/2026)
+
+Tests effectués **sans forfait data** depuis un téléphone Yas Togo (curl sur l'appareil) :
+
+| Hôte testé | HTTP | Statut |
+|------------|------|--------|
+| `yas.tg` | 200 | ✅ zero-rated |
+| `yas-app-mob-web-api.togocom.tg` | 200 | ✅ zero-rated |
+| `yas-app-ws-apim.togocom.tg` | 302 | ✅ zero-rated |
+| `ws-prp-mob-web-api.togocom.tg` | 200 | ✅ zero-rated |
+| `tmoneytogocom.blob.core.windows.net` | 400 (réponse Azure) | ✅ zero-rated |
+| `www.togocom.tg` | 000 | ❌ bloqué |
+| `blob.core.windows.net` (générique) | 000 | ❌ bloqué |
+| `azureopendatastorage.blob.core.windows.net` (autre compte) | 000 | ❌ bloqué |
+| `firebaseremoteconfig.googleapis.com` | 000 | ❌ bloqué |
+
+Constats :
+
+- La whitelist opérateur est **par hostname exact** (blob Azure d'un autre compte = bloqué).
+- **Tout l'écosystème de l'app Yas est zero-rated** : APIs (`*.togocom.tg`), CDN images
+  (`tmoneytogocom.blob.core.windows.net`), site (`yas.tg`). L'app et ses jeux fonctionnent
+  **entièrement sans forfait** (démo : un tour du jeu « Win Pizz » joué sans forfait, 150 Mo gagnés).
+- Pour fal2proxy : **aucun gain côté Domain Fronting** (pas de domaine contrôlé dans la whitelist ;
+  cross-domain impossible). La voie « data gratuite » la plus directe reste l'app elle-même
+  (jeu quotidien, parrainage, popup FreeData) — voir `YAS-APP-ANALYSIS.md`.
