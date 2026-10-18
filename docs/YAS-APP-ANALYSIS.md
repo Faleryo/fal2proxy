@@ -122,6 +122,7 @@ Secteurs et poids observés en config (`weights: [5,20,10,15,18,20,12]`, somme =
 | Popup | « Félicitations ! Tu viens de bénéficier d'un bonus de 150 Mo val 1j. Profites-en avec Yas ! » |
 | Après le tour | badge **+2 Tours** (`remainingAttempts: 2`) |
 | Coût data | **0** (tout zero-rated) |
+| Vérifié à l'écran (11:12) | Carte solde : **INTERNET 144 Mo** — bonus 150 Mo actif, ≈6 Mo consommés depuis le gain (trafic hors whitelist : notifications/Play/sync) |
 
 Payload de provisionnement observé (sans les jetons) : `rewardType: Bundle`,
 `rewardTypeId: 3`, `validity: 24` (h), `tarifcode: Mega_App`, `rewardDetail : "un bonus de 150 Mo val 1j"`.
