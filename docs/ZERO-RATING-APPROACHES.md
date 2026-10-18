@@ -34,6 +34,14 @@ Client → saily.com:80 (Cloudflare edge) → saily.flashservice.org → VPS (16
 - L'opérateur peut zero-rater spécifiquement `yas.tg` et pas tout Cloudflare
 - Cloudflare peut changer ses règles
 
+### ⚠️ Mesuré le 18/10/2026 (SIM 2 sans forfait) — prérequis non validé
+- `saily.com` est **bloqué** par l'opérateur (ports 80/443, IPv4+IPv6), y compris en le
+  forçant sur l'IP d'un edge Cloudflare zero-rated (`104.18.3.27`) : la même requête
+  répond depuis internet normal (403 Cloudflare) → le blocage vient bien de l'opérateur.
+- L'opérateur ne zero-rate **pas Cloudflare en général** ; la whitelist porte sur des
+  paires (hostname ↔ IP) de l'écosystème Yas. ⇒ **Cette approche n'est pas validée**
+  (détails et tests croisés : §8).
+
 ### Ports Cloudflare supportés
 | Protocole | Ports |
 |-----------|-------|
@@ -83,7 +91,7 @@ Cloudflare a bloqué le **Domain Fronting cross-domain** en 2018. Seul le **same
 
 ### Conditions pour que ça marche
 - `yas.tg` devrait être sur le **même compte Cloudflare** que notre domaine → impossible (on ne contrôle pas `yas.tg`)
-- Ou l'opérateur devrait zero-rater **tout Cloudflare** → à tester
+- Ou l'opérateur devrait zero-rater **tout Cloudflare** → testé le 18/10/2026 : **non** (voir §8)
 
 ---
 
@@ -144,7 +152,7 @@ Cloudflare a bloqué le **Domain Fronting cross-domain** en 2018. Seul le **same
 
 | Approche | Faisable ? | Conditions | Débit estimé |
 |----------|-----------|------------|-------------|
-| Cloudflare same-domain (actuel) | ✅ Oui | Opérateur zero-rate Cloudflare | ~6 Mbps up / ~3.5 Mbps down |
+| Cloudflare same-domain (actuel) | ⚠️ Non validé (§8) | Opérateur zero-rate Cloudflare | ~6 Mbps up / ~3.5 Mbps down |
 | Cross-domain fronting (yas.tg) | ❌ Non | Bloqué par Cloudflare | — |
 | Héberger sur yas.tg | ❌ Non | Pas d'accès au domaine | — |
 | VPS au Togo | ⚠️ Possible | Rare et cher | Maximal (pas de tunnel) |
@@ -162,6 +170,9 @@ Au lieu de `yas.tg`, testez si l'opérateur zero-rate **tout le trafic Cloudflar
 **Test** : Connectez-vous au tunnel (v2 ou v3) et vérifiez si le trafic est facturé.
 - Si oui → Cloudflare est zero-rated → notre config actuelle fonctionne
 - Si non → l'opérateur zero-rate spécifiquement `yas.tg`
+
+**Résultat (18/10/2026, SIM 2 sans forfait)** : Cloudflare **n'est pas** zero-rated en
+général (`saily.com` bloqué, cf. §8) → branche « Si non ».
 
 ### Étape 2 : Si Cloudflare n'est pas zero-rated en général
 - **Option A** : Chercher un VPS au Togo (réseau de l'opérateur)
@@ -215,3 +226,62 @@ Constats :
 - Pour fal2proxy : **aucun gain côté Domain Fronting** (pas de domaine contrôlé dans la whitelist ;
   cross-domain impossible). La voie « data gratuite » la plus directe reste l'app elle-même
   (jeu quotidien, parrainage, popup FreeData) — voir `YAS-APP-ANALYSIS.md`.
+
+Mesures complémentaires du même jour (verrouillage hôte ↔ IP, test `saily.com` sur edge
+Cloudflare, spoofing SNI/Host, interception port 80) : voir §8.
+
+---
+
+## 8. Affinage du modèle : verrouillage hôte ↔ IP et Cloudflare (18/10/2026, SIM 2 sans forfait)
+
+Batterie complémentaire depuis le téléphone (2ᵉ ligne Yas, `subId 3`, **aucun forfait**),
+avec **contre-vérification de chaque requête depuis une connexion internet normale**
+(workstation) pour distinguer ce qui vient de l'opérateur de ce qui vient du site.
+
+### 8.1 Verrouillage hôte ↔ IP (mesures croisées)
+
+| Requête | Sans forfait (SIM 2) | Internet normal (contrôle) |
+|---------|----------------------|----------------------------|
+| `yas.tg` via `104.18.2.27` / `104.18.3.27` (IP renvoyées par le DNS opérateur) | ✅ 200 | ✅ 200 |
+| `yas.tg` via `104.18.12.124` (autre edge Cloudflare) | ❌ 000 (timeout/RST) | ✅ 200 |
+| `saily.com` via `104.18.3.27` (edge zero-rated de `yas.tg`) | ❌ 000 | ✅ 403 (Cloudflare répond) |
+| `saily.com` (résolution normale `104.18.12.124`) | ❌ 000 | ✅ 403 |
+
+Lecture :
+- l'IP autorisée ne suffit pas → il faut **aussi le bon hostname** ;
+- le bon hostname ne suffit pas → il faut **aussi l'IP attendue** (celle du DNS opérateur) ;
+- **Cloudflare n'est pas zero-rated en général** : l'approche §1 n'est pas validée.
+
+### 8.2 Spoofing SNI / Host vers notre VPS : aucun passage
+
+Variantes testées : SNI `yas.tg` / `saily.com` / `admin.saily.com` / hôtes app → VPS:443 ;
+Host `yas.tg` / `admin.saily.com` / `saily.flashservice.org` → VPS:80.
+- port 443 → timeout ou RST pendant le handshake TLS ;
+- port 80 → HTTP **302** vers `http://nodata.togocel.tg` (portail « pas de data » de
+  l'opérateur) ou timeout.
+
+### 8.3 Comportement de l'interception (sans forfait)
+
+- HTTP (80) vers un hôte non whitelisté → redirection **302** vers `http://nodata.togocel.tg`.
+- HTTPS (443) vers un hôte non whitelisté → **RST** pendant le ClientHello (SNI lisible)
+  ou timeout.
+- Résultats **flaky** (RST/timeouts aléatoires selon les instants) : toujours re-tester
+  avant de conclure sur un hôte donné.
+
+### 8.4 Hôtes bloqués constatés (en plus de §7)
+
+`www.cloudflare.com`, `discord.com`, `www.fastly.com`, `www.akamai.com`, `aws.amazon.com`,
+`github.com`, `www.microsoft.com`, `www.google.com`, `saily.com`,
+`azureopendatastorage.blob.core.windows.net`.
+
+Nuances : `tmoneytogocom.blob.core.windows.net` reste ✅ mais **intermittent** (parfois 400,
+parfois RST) ; `www.togocom.tg` jamais 200 (handshakes TLS partiels intermittents).
+
+### 8.5 Conclusion
+
+- Modèle opérateur : whitelist = **écosystème Yas uniquement**, verrouillée en
+  **paires hostname ↔ IP** → aucun domaine tiers contrôlable, pas de bypass trouvé.
+- Le prérequis de §1 (« l'opérateur zero-rate Cloudflare en général ») est contredit par
+  ces mesures sur SIM 2. Reste à confirmer sur **SIM 1 sans forfait** (bonus actif
+  jusqu'au ~19/10 11h04).
+- Pistes restantes : récompenses de l'app (§7), VPS au Togo (§3.1), forfait minimal.
