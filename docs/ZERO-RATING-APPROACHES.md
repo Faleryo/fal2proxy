@@ -275,7 +275,12 @@ Host `yas.tg` / `admin.saily.com` / `saily.flashservice.org` → VPS:80.
 `azureopendatastorage.blob.core.windows.net`.
 
 Nuances : `tmoneytogocom.blob.core.windows.net` reste ✅ mais **intermittent** (parfois 400,
-parfois RST) ; `www.togocom.tg` jamais 200 (handshakes TLS partiels intermittents).
+parfois RST/timeout) ; `www.togocom.tg` jamais 200 (handshakes TLS partiels intermittents).
+
+Config fal2proxy testée telle quelle (2ᵉ passage) : **SNI `admin.saily.com`** vers edge normal
+(`104.18.12.124`) → timeout ; vers l'edge autorisé de `yas.tg` (`104.18.3.27`) → RST ;
+**Host `saily.flashservice.org`** vers Cloudflare:80 → bloqué. Aucune variante de la config
+ne passe sans forfait.
 
 ### 8.5 Conclusion
 
@@ -284,4 +289,8 @@ parfois RST) ; `www.togocom.tg` jamais 200 (handshakes TLS partiels intermittent
 - Le prérequis de §1 (« l'opérateur zero-rate Cloudflare en général ») est contredit par
   ces mesures sur SIM 2. Reste à confirmer sur **SIM 1 sans forfait** (bonus actif
   jusqu'au ~19/10 11h04).
+- **Reproduit** lors d'un 2ᵉ passage le même jour : mêmes résultats (yas verrouillé aux IP
+  `104.18.2.27`/`104.18.3.27` ; `saily.com` et `admin.saily.com` bloqués sur tous les chemins
+  testés ; portail port 80 opérateur), avec les intermittences habituelles (`blob-yas`,
+  timeouts/RST aléatoires).
 - Pistes restantes : récompenses de l'app (§7), VPS au Togo (§3.1), forfait minimal.
