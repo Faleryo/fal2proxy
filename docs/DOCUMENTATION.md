@@ -287,6 +287,13 @@ fal2proxy/
 
 ---
 
+## Documentation complémentaire
+
+- `docs/GLOSSARY.md` — Glossaire de 50+ termes techniques
+- `docs/DOMAIN-FRONTING.md` — Explication du Domain Fronting
+- `docs/ZERO-RATING-APPROACHES.md` — Approches de zero-rating (Cloudflare, yas.tg, alternatives)
+- `docs/MIGRATION-GOST.md` — Guide de migration v2 → v3
+
 ## Glossaire
 
 Voir `docs/GLOSSARY.md` pour la définition de tous les termes techniques (zero-rating, Domain Fronting, SNI, DPI, etc.).
