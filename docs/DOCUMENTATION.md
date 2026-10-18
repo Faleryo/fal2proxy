@@ -291,6 +291,116 @@ fal2proxy/
 
 Voir `docs/GLOSSARY.md` pour la définition de tous les termes techniques (zero-rating, Domain Fronting, SNI, DPI, etc.).
 
+## Chiffrement
+
+### rawbridge ne chiffre rien
+Le pont C (`rawbridge`) fait **uniquement** du transfert brut d'octets. Il ne chiffre ni ne déchiffre quoi que ce soit.
+
+### Flux de données (v2, port 80)
+```
+Client DarkTunnel ──HTTP (clair)──▶ Cloudflare ──HTTP (clair)──▶ rawbridge ──raw TCP──▶ OpenSSH ──SSH (chiffré)──▶ Internet
+                                    (port 80)                    (port 8080)    (port 22)
+```
+
+### Qui fait quoi
+
+| Composant | Chiffrement ? | Rôle |
+|-----------|--------------|------|
+| **rawbridge** (C) | ❌ Non | Transfère les octets bruts après le `101` |
+| **OpenSSH** (port 22) | ✅ Oui (chacha20-poly1305) | Chiffre/déchiffre le trafic SSH |
+| **nginx** (port 80) | ❌ Non (HTTP) | Proxy HTTP, pas de TLS |
+| **Cloudflare** (port 80) | ❌ Non (HTTP) | Proxy HTTP, pas de TLS |
+| **DarkTunnel** (client) | ✅ Oui (côté SSH) | Chiffre avec SSH |
+
+### Ce qui est en clair
+- Le **handshake HTTP** (`GET / HTTP/1.1`, `Host: ...`, `Upgrade: websocket`) est en **clair** sur le port 80
+- Le **SNI** (`admin.saily.com`) est visible en clair dans le handshake TLS (si WSS sur 443)
+- Les **octets SSH** sont chiffrés par OpenSSH, mais le **conteneur** (HTTP/WebSocket) est en clair
+
+### DarkTunnel et TLS
+DarkTunnel en mode **PROXY** envoie un **payload HTTP brut**. Il ne fait **pas** de handshake TLS automatiquement.
+
+| Mode DarkTunnel | Chiffrement | Compatible zero-rating |
+|-----------------|------------|----------------------|
+| PROXY (actuel) | ❌ Non (HTTP brut) | ✅ Oui (port 80) |
+| SSL (si dispo) | ✅ Oui (TLS) | ⚠️ Incertain |
+| DIRECT | ❌ Non | ❌ Non |
+
+**Problème** : Si on met `proxyPort: 443`, DarkTunnel enverra le payload HTTP en clair sur le port 443. Le serveur (qui attend du TLS) répondra avec une erreur. DarkTunnel ne gère pas le TLS nativement en mode PROXY.
+
+### Solution pour le chiffrement complet : v3 (gost)
+Gost gère le TLS nativement (`wss://`) :
+```
+Client gost → Cloudflare:443 (TLS) → VPS:443 (gost TLS) → Internet
+```
+Tout est chiffré de bout en bout, y compris le handshake. C'est la vraie solution pour le chiffrement complet.
+
+### Résumé
+- **rawbridge** = pas de chiffrement (juste un pont)
+- **SSH** = chiffrement du trafic (OpenSSH)
+- **TLS (port 443)** = chiffrement du handshake HTTP
+- **v2 (port 80)** = handshake en clair, SSH chiffré
+- **v3 (port 443)** = tout chiffré (TLS + gost)
+
+---
+
+## Domain Fronting
+
+### Définition
+Technique qui utilise un CDN (Cloudflare) comme intermédiaire. Le client se connecte à un domaine zero-rated (SNI) mais envoie une requête HTTP vers un autre domaine (Host) hébergé sur le même CDN.
+
+### Exemple concret
+```
+# Ce que l'opérateur mobile voit (handshake TLS) :
+SNI = saily.com                    → domaine zero-rated → pas de facturation
+
+# Ce que Cloudflare lit (requête HTTP) :
+Host: saily.flashservice.org       → route vers votre VPS
+
+# Résultat : le trafic passe par Cloudflare sans être facturé
+```
+
+### Termes associés
+| Terme | Définition | Exemple |
+|-------|-----------|---------|
+| **Domain Fronting** | Masquer la destination réelle derrière un domaine zero-rated | SNI = `saily.com`, Host = `saily.flashservice.org` |
+| **CDN Fronting** | Variante spécifique aux CDN | Cloudflare sert de façade |
+| **SNI Spoofing** | Usurper le SNI pour tromper l'opérateur | `serverNameIndication = "admin.saily.com"` |
+| **Host Header Injection** | Injecter un en-tête Host différent du SNI | `Host: saily.flashservice.org` dans le payload |
+| **Zero-Rating Bypass** | Contournement du zero-rating | Accès gratuit via domaine zero-rated |
+| **HTTP Injector** | Catégorie d'apps qui automatisent le Domain Fronting | DarkTunnel, HTTP Injector |
+| **Traffic Masquerading** | Faire passer le trafic pour un autre type | SSH masqué en HTTP/WebSocket |
+| **CDN Tunneling** | Utiliser un CDN comme tunnel | Client ←→ Cloudflare ←→ VPS |
+
+### Cross-domain vs Same-domain
+```
+# Cross-domain (BLOQUÉ par Cloudflare depuis 2018) :
+SNI = google.com          (domaine A)
+Host = monsite.com        (domaine B, compte différent)
+→ Cloudflare détecte la différence → bloque
+
+# Same-domain (FONCTIONNE) :
+SNI = saily.com           (domaine A, compte Cloudflare)
+Host = saily.flashservice.org  (sous-domaine A, même compte)
+→ Cloudflare accepte → route vers l'origin
+```
+
+### Historique
+| Année | Événement |
+|-------|-----------|
+| 2015 | Tor propose le Domain Fronting pour contourner la censure |
+| 2018 | Cloudflare, Google, AWS bloquent le Domain Fronting cross-domain |
+| 2020+ | Le Domain Fronting same-domain fonctionne toujours |
+| 2024+ | Les apps Android (DarkTunnel, HTTP Injector) automatisent la technique |
+
+### Limitations
+- Le domaine de l'origin doit être sur le **même compte Cloudflare**
+- L'opérateur doit **zero-rater le CDN** ou le domaine utilisé comme façade
+- Cloudflare peut changer ses règles à tout moment
+- Certains opérateurs utilisent le **DPI** pour détecter le masquage
+
+---
+
 ## Améliorations futures possibles
 
 1. **gost v3** — remplacer DarkTunnel par gost client/serveur (plus rapide, moins de couches)
