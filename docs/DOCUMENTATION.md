@@ -292,6 +292,13 @@ fal2proxy/
 - `docs/GLOSSARY.md` — Glossaire de 50+ termes techniques
 - `docs/DOMAIN-FRONTING.md` — Explication du Domain Fronting
 - `docs/ZERO-RATING-APPROACHES.md` — Approches de zero-rating (Cloudflare, yas.tg, alternatives)
+- `docs/FREE-OPTIONS.md` — Options gratuites (Termux, PC, optimisation)
+- `docs/TERMUX-SERVER.md` — Guide détaillé : serveur local sur Termux
+- `docs/MIGRATION-GOST.md` — Guide de migration v2 → v3
+
+- `docs/GLOSSARY.md` — Glossaire de 50+ termes techniques
+- `docs/DOMAIN-FRONTING.md` — Explication du Domain Fronting
+- `docs/ZERO-RATING-APPROACHES.md` — Approches de zero-rating (Cloudflare, yas.tg, alternatives)
 - `docs/MIGRATION-GOST.md` — Guide de migration v2 → v3
 
 ## Glossaire

@@ -26,6 +26,16 @@ Then use `fal2proxy` menu.
 - Proxy: saily.com:80
 - Quota: unlimited (enable in advanced menu)
 
+## Options gratuites
+
+Si vous n'avez pas de VPS au Togo, vous pouvez utiliser :
+- **Termux** (téléphone Android comme serveur) — voir `docs/TERMUX-SERVER.md`
+- **PC/Raspberry Pi** comme serveur SSH local
+- **Optimiser v2** (gratuit, améliore l'existant)
+- **Forfait minimal** ($1-5/mois)
+
+Voir `docs/FREE-OPTIONS.md` pour les détails.
+
 ## Versions
 - v1.0.0: Python bridge (select)
 - v2.0.0: C bridge (epoll + splice + optimized I/O)
