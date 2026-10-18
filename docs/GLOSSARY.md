@@ -197,6 +197,22 @@ Sec-WebSocket-Version: 13[crlf]
 **Définition** : Protocole de communication bidirectionnelle sur HTTP.
 **Exemple** : `Upgrade: websocket` dans le payload HTTP.
 
+### TLS/SSL (Transport Layer Security)
+**Définition** : Protocole de chiffrement de la connexion entre client et serveur.
+**Exemple** : `wss://` = WebSocket over TLS (port 443). Chiffre tout le trafic, y compris le handshake HTTP.
+
+### WSS (WebSocket Secure)
+**Définition** : WebSocket chiffré avec TLS.
+**Exemple** : `wss://saily.com:443` — tout le trafic est chiffré de bout en bout.
+
+### DarkTunnel SSL mode
+**Définition** : Mode de DarkTunnel qui utilise TLS pour chiffrer le handshake. Non supporté nativement en mode PROXY.
+**Exemple** : DarkTunnel envoie le payload HTTP en clair même sur le port 443 → échec si le serveur attend du TLS.
+
+### Zero-copy
+**Définition** : Transfert de données entre descripteurs de fichier sans copie en espace utilisateur.
+**Exemple** : `splice()` dans rawbridge v2 — les données passent directement du socket client au socket SSH au niveau du noyau.
+
 ### TLS/SSL
 **Définition** : Chiffrement de la connexion (Transport Layer Security).
 **Exemple** : `wss://` = WebSocket over TLS (port 443).
@@ -345,6 +361,8 @@ Host = saily.flashservice.org  (sous-domaine A, même compte)
 | CGNAT | Réseau | §3 |
 | Cipher | Protocoles | §5 |
 | DarkTunnel | Outils | §6 |
+| DarkTunnel SSL mode | Protocoles | §5 |
+| Zero-copy | Protocoles | §5 |
 | DPI | Réseau | §3 |
 | DPI bypass | Réseau | §3 |
 | Domain Fronting | Contournement | §2 |
