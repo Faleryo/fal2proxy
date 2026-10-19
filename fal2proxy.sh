@@ -126,6 +126,10 @@ gen_npv_link(){
   read -rp "Username (without prefix): " u
   u="${FAL_PREFIX}${u}"
   line="$(db_get "$u")"
+  if [ -z "$line" ]; then
+    u="${u#${FAL_PREFIX}}"   # compte sans prefixe fp_ (ex: faleryo)
+    line="$(db_get "$u")"
+  fi
   [ -z "$line" ] && { echo "Not found."; pause; return; }
   IFS=: read -r _ p exp q en ms <<< "$line"
   base_user="${u#${FAL_PREFIX}}"
