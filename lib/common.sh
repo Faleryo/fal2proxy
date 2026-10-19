@@ -13,6 +13,10 @@ HTTPS_PORT="443"
 INJECT_HOST="saily.flashservice.org"
 PROXY_HOST="saily.flashservice.org"
 PROXY_PORT="80"
+INJECT_PORT="38443"   # rawbridge direct (sans Cloudflare)
+# IP publique du serveur (pour SSH direct : le domaine orange-cloud ne porte pas le 22)
+SSH_HOST="${SSH_HOST:-$(ip -4 route get 1.1.1.1 2>/dev/null | grep -oP 'src \K[\d.]+' | head -1)}"
+[ -n "${SSH_HOST:-}" ] || SSH_HOST="$(hostname -I 2>/dev/null | awk '{print $1}')"
 DEFAULT_QUOTA_MB="0"   # 0 = unlimited
 DEFAULT_EXPIRY_DAYS="30"
 NGINX_CONF="/etc/nginx/sites-available/fal2proxy"
