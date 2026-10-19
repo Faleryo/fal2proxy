@@ -122,6 +122,47 @@ PY
   pause
 }
 
+gen_npv_link(){
+  read -rp "Username (without prefix): " u
+  u="${FAL_PREFIX}${u}"
+  line="$(db_get "$u")"
+  [ -z "$line" ] && { echo "Not found."; pause; return; }
+  IFS=: read -r _ p exp q en ms <<< "$line"
+  base_user="${u#${FAL_PREFIX}}"
+  read -rp "Inject Host/SNI (default $INJECT_HOST): " h
+  [ -z "$h" ] && h="$INJECT_HOST"
+  read -rp "Proxy host (default $PROXY_HOST): " ph
+  [ -z "$ph" ] && ph="$PROXY_HOST"
+  read -rp "Proxy port (default $PROXY_PORT): " pp
+  [ -z "$pp" ] && pp="$PROXY_PORT"
+  read -rp "SSH host (default $ph): " sh
+  [ -z "$sh" ] && sh="$ph"
+  read -rp "SSH port (default $SSH_PORT): " sp
+  [ -z "$sp" ] && sp="$SSH_PORT"
+  payload="GET / HTTP/1.1[crlf]Host: ${h}[crlf]Connection: Upgrade[crlf]User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36[crlf]Upgrade: websocket[crlf]Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==[crlf]Sec-WebSocket-Version: 13[crlf][crlf]"
+  python3 - "$base_user" "$p" "$h" "$ph" "$pp" "$sh" "$sp" "$payload" <<'PY'
+import sys,json,base64
+u,p,h,ph,pp,sh,sp,payload = sys.argv[1:9]
+cfg={
+  "sshConfigType":"SSH-Direct",
+  "remarks":"fal2proxy",
+  "sshHost":sh,
+  "sshPort":int(sp),
+  "sshUsername":u,
+  "sshPassword":p,
+  "sni":h,
+  "httpProxy":f"{ph}:{pp}",
+  "payload":payload,
+  "dnsTTMode":"UDP",
+  "udpgwTransparentDNS":True
+}
+s=json.dumps(cfg,separators=(',',':'))
+print("npvt-ssh://"+base64.b64encode(s.encode()).decode())
+PY
+  echo
+  pause
+}
+
 domains_menu(){
   echo "Current inject host: $INJECT_HOST"
   read -rp "New inject host (blank to keep): " nh
@@ -278,6 +319,7 @@ while true; do
   echo "10) Update components"
   echo "11) Uninstall"
   echo "12) Bandwidth monitor"
+  echo "13) Generate NPV Tunnel link"
   echo "0) Exit"
   echo
   read -rp "Choice: " ch
@@ -294,6 +336,7 @@ while true; do
     10) update_components ;;
     11) uninstall; break ;;
     12) bandwidth_monitor ;;
+    13) gen_npv_link ;;
     0) break ;;
     *) ;;
   esac

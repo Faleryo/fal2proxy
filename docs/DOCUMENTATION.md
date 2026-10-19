@@ -109,6 +109,7 @@ Lancer avec : `fal2proxy`
 | 3) List clients | Lister tous les clients (statut, expiration, quota, sessions) |
 | 4) Modify client | Modifier pass, expiration, enable/disable, max sessions, quota |
 | 5) Generate DarkTunnel link | Générer un lien `darktunnel://` pour l'app Android |
+| 13) Generate NPV Tunnel link | Générer un lien `npvt-ssh://` pour l'app NPV Tunnel |
 | 6) Domains & injection | Changer le Host/SNI d'injection |
 | 7) Advanced security | fail2ban, UFW, ports SSH supplémentaires, quota on/off |
 | 8) Monitoring | Statut des services, ports, logs récents |
