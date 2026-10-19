@@ -133,22 +133,25 @@ gen_npv_link(){
   [ -z "$line" ] && { echo "Not found."; pause; return; }
   IFS=: read -r _ p exp q en ms <<< "$line"
   base_user="${u#${FAL_PREFIX}}"
+  echo "Config SSH-proxy-payload (ssh + proxy + payload, mode PROXY de fal2proxy)."
+  echo "Entree = defaut. Taper 'direct' comme proxy host = SSH sans proxy/payload."
   read -rp "SSH host (default $SSH_HOST): " sh
   [ -z "$sh" ] && sh="$SSH_HOST"
   read -rp "SSH port (default $SSH_PORT): " sp
   [ -z "$sp" ] && sp="$SSH_PORT"
-  read -rp "Mode inject proxy+payload (reseaux qui bloquent le port 22) ? [y/N]: " inj
-  if [[ "${inj:-n}" =~ ^[yY]$ ]]; then
-    read -rp "Inject Host/SNI (default $INJECT_HOST): " h
-    [ -z "$h" ] && h="$INJECT_HOST"
-    read -rp "Proxy host (default $SSH_HOST): " ph
-    [ -z "$ph" ] && ph="$SSH_HOST"
-    read -rp "Proxy port (default $INJECT_PORT): " pp
-    [ -z "$pp" ] && pp="$INJECT_PORT"
-    payload="GET / HTTP/1.1[crlf]Host: ${h}[crlf]Connection: Upgrade[crlf]User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36[crlf]Upgrade: websocket[crlf]Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==[crlf]Sec-WebSocket-Version: 13[crlf][crlf]"
-  else
-    h=""; ph=""; pp=""; payload=""
-  fi
+  read -rp "Proxy host (default $PROXY_HOST): " ph
+  case "${ph,,}" in
+    direct|none) ph=""; pp=""; h="" ;;
+    *)
+      [ -z "$ph" ] && ph="$PROXY_HOST"
+      read -rp "Proxy port (default $PROXY_PORT): " pp
+      [ -z "$pp" ] && pp="$PROXY_PORT"
+      read -rp "Inject Host/SNI (default $INJECT_HOST): " h
+      [ -z "$h" ] && h="$INJECT_HOST"
+      ;;
+  esac
+  payload=""
+  [ -n "$ph" ] && payload="GET / HTTP/1.1[crlf]Host: ${h}[crlf]Connection: Upgrade[crlf]User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36[crlf]Upgrade: websocket[crlf]Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==[crlf]Sec-WebSocket-Version: 13[crlf][crlf]"
   python3 - "$base_user" "$p" "$h" "$ph" "$pp" "$sh" "$sp" "$payload" <<'PY'
 import sys,json,base64
 u,p,h,ph,pp,sh,sp,payload = sys.argv[1:9]
@@ -172,19 +175,18 @@ cfg={
 }
 s=json.dumps(cfg,separators=(',',':'))
 uri="npvt-ssh://"+base64.b64encode(s.encode()).decode()
-print(f"Config: {u}@{sh}:{sp}  proxy={ph+':'+pp if ph else 'aucun (SSH direct)'}")
+print(f"Config: SSH {u}@{sh}:{sp} / proxy {ph+':'+pp if ph else 'aucun'} / payload {'~'+str(len(payload))+' chars' if payload else 'aucune'}")
 print()
 print("=== URI npvt-ssh:// (QR / presse-papier) ===")
 print(uri)
 print()
 print("=== PAYLOAD A COPIER-COLLER DANS NPV TUNNEL ===")
-print(payload if payload else "(aucune - mode SSH direct, laisser le champ vide)")
+print(payload if payload else "(aucune - mode SSH direct)")
 print("=== FIN PAYLOAD ===")
 print()
 if payload:
   print("Note: NPV Tunnel ne remplit pas le champ Payload depuis l'URI.")
   print("      Colle manuellement la payload ci-dessus dans le profil.")
-# save uri to temp file for QR generation
 open("/tmp/fal2proxy_npvt_uri.txt","w").write(uri)
 PY
   if command -v qrencode >/dev/null 2>&1; then
