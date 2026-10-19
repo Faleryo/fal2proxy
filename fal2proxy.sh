@@ -150,14 +150,26 @@ cfg={
   "sshPort":int(sp),
   "sshUsername":u,
   "sshPassword":p,
+  "sshAuthMethod":"password",
   "sni":h,
   "httpProxy":f"{ph}:{pp}",
+  "authenticateProxy":False,
+  "proxyUsername":"",
+  "proxyPassword":"",
   "payload":payload,
   "dnsTTMode":"UDP",
+  "udpgwPort":7300,
   "udpgwTransparentDNS":True
 }
 s=json.dumps(cfg,separators=(',',':'))
+print("=== NPV Tunnel SSH config (JSON) ===")
+print(json.dumps(cfg,indent=2))
+print()
+print("=== npvt-ssh:// URI (pour Lynx / import tiers) ===")
 print("npvt-ssh://"+base64.b64encode(s.encode()).decode())
+print()
+print("Note: dans NPV Tunnel, colle le JSON ci-dessus dans la config SSH")
+print("      et verifie que le champ Payload contient bien la ligne ci-dessus.")
 PY
   echo
   pause
