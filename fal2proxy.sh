@@ -162,15 +162,22 @@ cfg={
   "udpgwTransparentDNS":True
 }
 s=json.dumps(cfg,separators=(',',':'))
-print("=== NPV Tunnel SSH config (JSON) ===")
-print(json.dumps(cfg,indent=2))
+uri="npvt-ssh://"+base64.b64encode(s.encode()).decode()
+print("=== URI npvt-ssh:// (QR / presse-papier) ===")
+print(uri)
 print()
-print("=== npvt-ssh:// URI (pour Lynx / import tiers) ===")
-print("npvt-ssh://"+base64.b64encode(s.encode()).decode())
+print("=== PAYLOAD A COPIER-COLLER DANS NPV TUNNEL ===")
+print(payload)
+print("=== FIN PAYLOAD ===")
 print()
-print("Note: dans NPV Tunnel, colle le JSON ci-dessus dans la config SSH")
-print("      et verifie que le champ Payload contient bien la ligne ci-dessus.")
+print("Note: NPV Tunnel ne remplit pas le champ Payload depuis l'URI.")
+print("      Colle manuellement la payload ci-dessus dans le profil.")
+# save uri to temp file for QR generation
+open("/tmp/fal2proxy_npvt_uri.txt","w").write(uri)
 PY
+  if command -v qrencode >/dev/null 2>&1; then
+    qrencode -o /tmp/fal2proxy_npvt_qr.png -s 6 "$(cat /tmp/fal2proxy_npvt_uri.txt)" 2>/dev/null && echo "QR code genere: /tmp/fal2proxy_npvt_qr.png"
+  fi
   echo
   pause
 }
